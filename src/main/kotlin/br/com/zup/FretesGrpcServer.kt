@@ -29,13 +29,32 @@ class FretesGrpcServer:  FretesServiceGrpc.FretesServiceImplBase(){
                 .asRuntimeException()
             responseObserver?.onError(erro)
         }
+        else if(!cep.matches("[0-9]{5}-[0-9]{3}".toRegex())) {  // validação de formato
+            logger.warn("......Erro de validação, cep invalido.......")
+
+            val erro = Status.INVALID_ARGUMENT.withDescription("Cep com formato invalido")
+                .augmentDescription("formato esperado 5555-555")
+                .asRuntimeException()
+            responseObserver?.onError(erro)
+        }
         else {
 
             logger.info("Calculando frete para request: $request")
 
+            var valor = 0.0
+            // validação interna
+            try {
+                valor = Random.nextDouble(from = 0.0, until = 140.0)
+            }
+            catch (e: Exception) {
+                logger.warn("Erro na logica de calculo do frete")
+                responseObserver?.onError(Status.INTERNAL.withDescription(e.message).withCause(e).asRuntimeException())
+            }
+
+
             val response = CalculaFreteResponse.newBuilder()
                 .setCep(request!!.cep)
-                .setValor(Random.nextDouble(from = 0.0, until = 140.0))
+                .setValor(valor)
                 .build()
 
             logger.info("Frete calculado: $response")
